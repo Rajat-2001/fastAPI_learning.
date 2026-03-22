@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Path, HTTPException, Query
 import json
 from pydantic import BaseModel, Field, computed_field
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
@@ -33,6 +33,15 @@ class Patient(BaseModel):
             return "Overweight"
         else:
             return "Obese"
+        
+class Patient_Update(BaseModel):
+
+    name : Annotated[Optional[str], Field(default=None)]
+    age : Annotated[Optional[int], Field(default=None)]
+    city : Annotated[Optional[str], Field(default=None)]
+    gender : Annotated[Optional[Literal['male', 'female', 'others']], Field(default = None)]
+    height : Annotated[Optional[float], Field(default=None, gt=0)]
+    weight : Annotated[Optional[float], Field(default=None, gt=0)]
 
 def load_data():
     with open('patients.json', 'r') as f:
@@ -104,3 +113,55 @@ def create_patient (patient: Patient):
     save_data(data)
 
     return JSONResponse(status_code=201, content={'message': 'patient created successfully!'})
+
+
+#update/edit endpoint:- client provides an id of patient and request body in which he will tell what he wants to change in the existing patient. the HTTP method used is PUT coz we are updating something! stp1. new pydantic model coz in this the fields will not be required necessarily! the fields will be optional! stp2. new data will be updated in the existing data. 
+
+@app.put('/edit/{patient_id}')
+def update_patient(patient_id: str, patient_update: Patient_Update):
+
+    #load the existing data
+    data = load_data()
+
+    #check the patient id exists or not 
+    if patient_id not in data:
+        raise HTTPException(status_code=404, detail="Patient not found!")
+    
+    # if patient is correct, extract the existing data of the patient
+    existing_patient_info = data[patient_id]
+
+    updated_patient_info = patient_update.model_dump(exclude_unset=True) #only those values are fetched whose values were sent by the client in the request body!
+
+    for key,value in updated_patient_info.items():
+        existing_patient_info[key] = value
+
+    existing_patient_info['id'] = patient_id #to add id in our new dictionary
+    patient_pydantic_obj = Patient(**existing_patient_info) #converting the existing_patient_info -> pydantic object to get updated bmi+verdict
+    existing_patient_info = patient_pydantic_obj.model_dump(exclude='id')
+
+    #add this dictionary to data base
+    data[patient_id] = existing_patient_info
+
+    #save this data
+
+    save_data(data)
+
+    return JSONResponse(status_code=200, content={'message': 'patient updated!'})
+
+
+@app.delete('/delete/{patient_id}')
+def delete_function(patient_id:str):
+
+    #load the data
+    data = load_data()
+
+    #check if the patient exists
+
+    if patient_id not in data:
+        raise HTTPException (status_code=404, detail="patient not found!")
+    
+    del data[patient_id]
+
+    save_data(data)
+
+    return JSONResponse(status_code=200, content="patient deleted!")
