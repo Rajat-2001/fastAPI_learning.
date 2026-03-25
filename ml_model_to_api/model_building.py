@@ -14,6 +14,8 @@ import pickle
 
 df = pd.read_csv('/Users/rajatgoswami/Downloads/fastAPI/ml_model_to_api/insurance.csv')
 
+
+
 #stripping all the blank spaces before the column names 
 df.columns = df.columns.str.strip()
 
@@ -73,6 +75,8 @@ def city_tier(city):
         return 3
 
 df_feat["city_tier"] = df_feat["city"].apply(city_tier)
+df_feat = df_feat.apply(lambda col: col.str.strip() if col.dtype == 'object' else col)
+
 
 df_feat.drop(columns=['age', 'weight', 'height', 'smoker', 'city'])[['income_lpa', 'occupation', 'bmi', 'age_group', 'lifestyle_risk', 'city_tier']]
 
@@ -83,8 +87,8 @@ y = df_feat["insurance_premium_category"]
 
 #Define categorical and numeric feature
 
-categorical_features = ["age_group", "lifestyle_risk", "occupation", "city_tier"]
-numerica_features = ["bmi", "income_lpa"]
+categorical_features = ["age_group", "lifestyle_risk", "occupation"]
+numerica_features = ["bmi", "income_lpa", "city_tier"]
 
 #create colum transformer for OHE
 
@@ -99,6 +103,8 @@ pipline = Pipeline(steps=[("preprocessor", preprocessor),
 #split data and train model 
 
 x_train, x_test, y_train, y_test = train_test_split(x,y, test_size=0.2, random_state=1)
+
+
 pipline.fit(x_train, y_train)
 
 #predict and evaluate
