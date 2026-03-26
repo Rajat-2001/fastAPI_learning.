@@ -77,7 +77,9 @@ class User_Input (BaseModel):
         else:
             return 3
 
-
+@app.get('/')
+def home():
+    return {'message': 'Premium Insurance Prediction API'}
 
 @app.post('/predict/')
 def predict_premium(data: User_Input): #this tells what kind of data will be received by the function, here the type of the object is the User_Input, same as the pydantic model, we'll receive the data from the request body, that data will go to the pydantic model, pydantic model will work on it like validation and making computed fields etc and that will be received as data in this function!
