@@ -10,6 +10,8 @@ import pandas as pd
 with open('/Users/rajatgoswami/Downloads/fastAPI/ml_model_to_api/model.pkl','rb') as f:
     model = pickle.load(f)
 
+MODEL_VERSION = '1.1.0' #this is a setup model number and this is usually given by a software like MLFLOW
+
 app = FastAPI()
 
 tier_1_cities = ["Mumbai", "Delhi", "Chennai", "Kolkata", "Hyderabad", "Pune"]
@@ -77,13 +79,15 @@ class User_Input (BaseModel):
         else:
             return 3
 
+#human readable
 @app.get('/')
 def home():
     return {'message': 'Premium Insurance Prediction API'}
 
+#machine readable
 @app.get('/health')
 def health_check():
-    return {'status': 'ok'}
+    return {'status': 'ok', 'version': MODEL_VERSION, 'model_loaded': model is not None}
 
 @app.post('/predict/')
 def predict_premium(data: User_Input): #this tells what kind of data will be received by the function, here the type of the object is the User_Input, same as the pydantic model, we'll receive the data from the request body, that data will go to the pydantic model, pydantic model will work on it like validation and making computed fields etc and that will be received as data in this function!
